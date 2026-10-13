@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcard Minna no Nihongo - Bài 29</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body {
+            background: linear-gradient(rgba(255, 245, 247, 0.55), rgba(240, 220, 225, 0.65)),
+                        url('https://images.unsplash.com/photo-1522383225653-ed111181a951?q=80&w=1920&auto=format&fit=crop') center/cover no-repeat fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Hiệu ứng Cánh hoa anh đào rơi */
+        .sakura-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .petal {
+            position: absolute;
+            background: #ffb7c5;
+            border-radius: 15px 0 15px 0;
+            opacity: 0.75;
+            filter: drop-shadow(0 2px 4px rgba(216, 90, 127, 0.2));
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% { transform: translate(0, -10px) rotate(0deg); opacity: 0.8; }
+            100% { transform: translate(120px, 105vh) rotate(360deg); opacity: 0; }
+        }
+
+        .app-card {
+            position: relative;
+            z-index: 2;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            width: 100%;
+            max-width: 460px;
+            border-radius: 28px;
+            padding: 32px 24px;
+            border: 1.5px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 40px rgba(180, 100, 120, 0.15);
+            text-align: center;
+        }
+
+        .header { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: #b06d7e; margin-bottom: 20px; }
+
+        /* Flashcard Lật 3D */
+        .flashcard-wrapper {
+            perspective: 1000px;
+            width: 100%;
+            height: 230px;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(216, 90, 127, 0.12);
+        }
+        .flashcard.flipped { transform: rotateY(180deg); }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #f2d5db;
+            background: #ffffff;
+            padding: 16px;
+        }
+        .card-front { color: #3a2e30; }
+        .card-back {
+            background: #fff8f9;
+            color: #d85a7f;
+            transform: rotateY(180deg);
+        }
+
+        .kanji-text { font-size: 38px; font-weight: 700; letter-spacing: 2px; }
+        .hint-text { font-size: 12px; color: #b06d7e; margin-top: 10px; opacity: 0.8; }
+        
+        .hiragana-text { font-size: 22px; font-weight: 600; color: #d85a7f; margin-bottom: 2px; }
+        .meaning-text { font-size: 18px; font-weight: 700; color: #4a383b; margin-bottom: 10px; }
+        
+        /* Khung câu ví dụ */
+        .example-box {
+            background: rgba(216, 90, 127, 0.08);
+            border-left: 3px solid #d85a7f;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #5a4046;
+            text-align: left;
+            width: 100%;
+        }
+        .example-jp { font-weight: 600; color: #3a2e30; }
+        .example-vi { font-size: 12px; color: #7a5c63; }
+
+        /* Danh sách 4 lựa chọn tiếng Việt */
+        .options-grid { display: flex; flex-direction: column; gap: 10px; }
+        .opt-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #f2d5db;
+            color: #4a383b;
+            padding: 12px 14px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .opt-btn:hover:not(:disabled) { background: #fff5f7; border-color: #d85a7f; transform: translateY(-1px); }
+        .opt-btn.correct { background: #e8f5e9 !important; border-color: #66bb6a !important; color: #2e7d32 !important; }
+        .opt-btn.wrong { background: #ffebee !important; border-color: #ef5350 !important; color: #c62828 !important; }
+        .opt-btn:disabled { cursor: default; }
+
+        .controls { display: flex; gap: 10px; margin-top: 16px; }
+        .nav-btn {
+            flex: 1; padding: 12px; border: none; background: #f2d5db; color: #8c5665;
+            font-weight: 600; border-radius: 14px; cursor: pointer; transition: 0.2s;
+        }
+        .nav-btn:hover { background: #d85a7f; color: white; }
+
+        /* Màn hình Chúc mừng khi hoàn thành */
+        .congrats-card {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 10px;
+        }
+        .congrats-icon { font-size: 60px; margin-bottom: 12px; }
+        .congrats-title { font-size: 24px; font-weight: 700; color: #d85a7f; margin-bottom: 8px; }
+        .congrats-desc { font-size: 15px; color: #5a4046; margin-bottom: 24px; line-height: 1.5; }
+        .restart-btn {
+            background: linear-gradient(135deg, #e07a9e 0%, #d85a7f 100%);
+            color: white; border: none; padding: 14px 32px; border-radius: 16px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(216, 90, 127, 0.3);
+        }
+        .restart-btn:hover { opacity: 0.95; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <div class="sakura-container" id="sakura-box"></div>
+
+    <div class="app-card">
+        <!-- Khung học Flashcard chính -->
+        <div id="learning-section">
+            <div class="header">
+                <span id="lesson-title">Minna no Nihongo - Bài 29</span>
+                <span id="card-count">1 / 25</span>
+            </div>
+
+            <!-- Flashcard lật 3D -->
+            <div class="flashcard-wrapper" onclick="toggleFlip()">
+                <div class="flashcard" id="card">
+                    <div class="card-front">
+                        <div class="kanji-text" id="kanji-display">開きます</div>
+                        <div class="hint-text">💡 Chạm vào đây để lật xem cách đọc & ví dụ</div>
+                    </div>
+                    <div class="card-back">
+                        <div class="hiragana-text" id="hiragana-display">あきます［ドアが～］</div>
+                        <div class="meaning-text" id="meaning-display">Mở ［cửa đang mở］</div>
+                        <div class="example-box">
+                            <div class="example-jp" id="example-jp">ドアが 開いて います。</div>
+                            <div class="example-vi" id="example-vi">Cửa ra vào đang mở.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 Lựa chọn trắc nghiệm tiếng Việt -->
+            <div class="options-grid" id="options-box">
+                <button class="opt-btn" onclick="checkAnswer(this)"></button>
+                <button class="opt-btn" onclick="checkAnswer(this)"></button>
+                <button class="opt-btn" onclick="checkAnswer(this)"></button>
+                <button class="opt-btn" onclick="checkAnswer(this)"></button>
+            </div>
+
+            <!-- Điều hướng -->
+            <div class="controls">
+                <button class="nav-btn" onclick="prevCard()">← Thẻ trước</button>
+                <button class="nav-btn" onclick="nextCard()">Thẻ tiếp →</button>
+            </div>
+        </div>
+
+        <!-- Màn hình Chúc mừng sau khi hoàn thành -->
+        <div class="congrats-card" id="congrats-section">
+            <div class="congrats-icon">🌸🎉</div>
+            <div class="congrats-title">おめでとうございます!</div>
+            <div class="congrats-desc">
+                Chúc mừng bạn đã hoàn thành trọn bộ <strong>25 từ vựng Bài 29</strong>!<br>
+                Điểm số trả lời đúng: <strong id="score-text" style="color:#d85a7f;">0/25</strong>
+            </div>
+            <button class="restart-btn" onclick="restartLesson()">🔄 Học lại Bài 29</button>
+        </div>
+    </div>
+
+    <script>
+        function createPetal() {
+            const box = document.getElementById('sakura-box');
+            const p = document.createElement('div');
+            p.classList.add('petal');
+            p.style.width = Math.random() * 8 + 8 + 'px';
+            p.style.height = Math.random() * 10 + 10 + 'px';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.animationDuration = Math.random() * 4 + 6 + 's';
+            box.appendChild(p);
+            setTimeout(() => p.remove(), 10000);
+        }
+        setInterval(createPetal, 400);
+
+        // Danh sách từ vựng Bài 29 trích xuất chính xác từ sách Minna no Nihongo II
+        const vocabList = [
+            { kanji: '開きます［ドアが～］', hiragana: 'あきます', meaning: 'Mở ［cửa đang mở］', exJp: 'ドアが 開いて います。', exVi: 'Cửa ra vào đang mở.' },
+            { kanji: '閉まります［ドアが～］', hiragana: 'しまります', meaning: 'Đóng ［cửa đang đóng］', exJp: 'ドアが 閉まって います。', exVi: 'Cửa ra vào đang đóng.' },
+            { kanji: 'つく［電気が～］', hiragana: 'つきます', meaning: 'Bật / Sáng ［đèn đang sáng］', exJp: '電気が ついて います。', exVi: 'Đèn điện đang bật.' },
+            { kanji: '消えます［電気が～］', hiragana: 'きえます', meaning: 'Tắt ［đèn đang tắt］', exJp: '電気が 消えて います。', exVi: 'Đèn điện đang tắt.' },
+            { kanji: '壊れます［いすが～］', hiragana: 'こわれます', meaning: 'Hỏng ［ghế bị hỏng］', exJp: 'この いすは 壊れて います。', exVi: 'Cái ghế này đang bị hỏng.' },
+            { kanji: '割れます［コップが～］', hiragana: 'われ ま す', meaning: 'Vỡ ［cốc bị vỡ］', exJp: 'コップが 割れました。', exVi: 'Cái cốc đã bị vỡ.' },
+            { kanji: '折れます［木が～］', hiragana: 'おれます', meaning: 'Gãy ［cây bị gãy］', exJp: '木が 折れて います。', exVi: 'Cành cây đang bị gãy.' },
+            { kanji: '破れます［紙が～］', hiragana: 'やぶれます', meaning: 'Rách ［giấy bị rách］', exJp: '袋が 破れて います。', exVi: 'Cái túi đang bị rách.' },
+            { kanji: '汚れます［服が～］', hiragana: 'よごれます', meaning: 'Bẩn ［quần áo bị bẩn］', exJp: '服が 汚れて しまいました。', exVi: 'Quần áo lỡ bị bẩn mất rồi.' },
+            { kanji: '付きます［ポケットが～］', hiragana: 'つきます', meaning: 'Có / Dính ［túi áo dính vào］', exJp: 'ポケットが 付いて います。', exVi: 'Áo có gắn túi.' },
+            { kanji: '外れます［ボタンが～］', hiragana: 'はずれます', meaning: 'Tuột / Cởi ra ［Cúc áo bị tuột］', exJp: 'ボタンが 外れて います。', exVi: 'Cúc áo đang bị tuột.' },
+            { kanji: '止まります［車が～］', hiragana: 'とまります', meaning: 'Dừng / Đỗ ［Xe dừng lại］', exJp: '車が 止まって います。', exVi: 'Xe ô tô đang dừng lại.' },
+            { kanji: 'まちがえます', hiragana: 'まちがえます', meaning: 'Nhầm lẫn / Sai sót', exJp: '道を まちがえました。', exVi: 'Tôi đã nhầm đường.' },
+            { kanji: '落とします', hiragana: 'おとします', meaning: 'Làm rơi / Đánh rơi', exJp: '財布を 落として しまいました。', exVi: 'Tôi trót làm rơi chiếc ví mất rồi.' },
+            { kanji: 'かかります［鍵が～］', hiragana: 'かかります', meaning: 'Khóa ［ổ khóa đang khóa］', exJp: '鍵が かかって います。', exVi: 'Ổ khóa đang được khóa.' },
+            { kanji: 'ふきます', hiragana: 'ふきます', meaning: 'Lau / Lau chùi', exJp: '机を ふきます。', exVi: 'Tôi lau cái bàn.' },
+            { kanji: '取り替えます', hiragana: 'とりかえます', meaning: 'Thay thế / Bổ sung', exJp: '電球を 取り替えます。', exVi: 'Tôi thay bóng đèn.' },
+            { kanji: '片づけます', hiragana: 'かたづけます', meaning: 'Dọn dẹp / Sắp xếp', exJp: '部屋を 片づけます。', exVi: 'Tôi dọn dẹp căn phòng.' },
+            { kanji: 'お皿', hiragana: 'おさら', meaning: 'Đĩa / Cái đĩa', exJp: 'お皿を 洗います。', exVi: 'Tôi rửa đĩa.' },
+            { kanji: 'お茶碗', hiragana: 'おちゃわん', meaning: 'Bát / Chén (ăn cơm)', exJp: 'お茶碗が 割れました。', exVi: 'Cái bát cơm đã bị vỡ.' },
+            { kanji: 'コップ', hiragana: 'こっぷ', meaning: 'Cốc / Cốc thủy tinh', exJp: 'コップに 水を 入れます。', exVi: 'Cho nước vào cốc.' },
+            { kanji: 'ガラス', hiragana: 'がらす', meaning: 'Kính / Thủy tinh', exJp: '窓ガラスが 割れました。', exVi: 'Kính cửa sổ đã bị vỡ.' },
+            { kanji: '袋', hiragana: 'ふくろ', meaning: 'Túi / Bao bao bì', exJp: '袋に 入れて ください。', exVi: 'Xin hãy cho vào túi.' },
+            { kanji: '書類', hiragana: 'しょるい', meaning: 'Giấy tờ / Tài liệu', exJp: '大切な 書類を なくしました。', exVi: 'Tôi đã làm mất tài liệu quan trọng.' },
+            { kanji: '枝', hiragana: 'えだ', meaning: 'Cành cây', exJp: '木の 枝が 折れています。', exVi: 'Cành cây đang bị gãy.' }
+        ];
+
+        const extraDistractors = [
+            "Đọc sách", "Xem phim", "Bưu điện", "Mỗi sáng", "Thứ hai",
+            "Tối nay", "Căn phòng", "Bệnh viện", "Trường học", "Cửa hàng"
+        ];
+
+        let currentIndex = 0;
+        let answeredCurrent = false;
+        let correctCount = 0;
+
+        function updateCard() {
+            const current = vocabList[currentIndex];
+            document.getElementById('card-count').innerText = `${currentIndex + 1} / ${vocabList.length}`;
+            document.getElementById('kanji-display').innerText = current.kanji;
+            document.getElementById('hiragana-display').innerText = current.hiragana;
+            document.getElementById('meaning-display').innerText = current.meaning;
+            document.getElementById('example-jp').innerText = current.exJp;
+            document.getElementById('example-vi').innerText = current.exVi;
+            
+            document.getElementById('card').classList.remove('flipped');
+            answeredCurrent = false;
+
+            let options = [current.meaning];
+            vocabList.forEach(item => {
+                if (!options.includes(item.meaning) && options.length < 4) {
+                    options.push(item.meaning);
+                }
+            });
+
+            let distractorIndex = 0;
+            while (options.length < 4 && distractorIndex < extraDistractors.length) {
+                let text = extraDistractors[distractorIndex];
+                if (!options.includes(text)) {
+                    options.push(text);
+                }
+                distractorIndex++;
+            }
+
+            options.sort(() => Math.random() - 0.5);
+
+            const btns = document.querySelectorAll('.opt-btn');
+            btns.forEach((btn, i) => {
+                btn.innerText = options[i];
+                btn.className = 'opt-btn';
+                btn.disabled = false;
+            });
+        }
+
+        function toggleFlip() {
+            document.getElementById('card').classList.toggle('flipped');
+        }
+
+        function checkAnswer(btn) {
+            if(answeredCurrent) return;
+            answeredCurrent = true;
+
+            document.getElementById('card').classList.add('flipped');
+
+            if(btn.innerText === vocabList[currentIndex].meaning) {
+                btn.classList.add('correct');
+                correctCount++;
+            } else {
+                btn.classList.add('wrong');
+            }
+
+            const btns = document.querySelectorAll('.opt-btn');
+            btns.forEach(b => b.disabled = true);
+        }
+
+        function nextCard() {
+            if (currentIndex === vocabList.length - 1) {
+                showCongrats();
+                return;
+            }
+            currentIndex++;
+            updateCard();
+        }
+
+        function prevCard() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCard();
+            }
+        }
+
+        function showCongrats() {
+            document.getElementById('learning-section').style.display = 'none';
+            document.getElementById('congrats-section').style.display = 'flex';
+            document.getElementById('score-text').innerText = `${correctCount} / ${vocabList.length}`;
+        }
+
+        function restartLesson() {
+            currentIndex = 0;
+            correctCount = 0;
+            document.getElementById('congrats-section').style.display = 'none';
+            document.getElementById('learning-section').style.display = 'block';
+            updateCard();
+        }
+
+        updateCard();
+    </script>
+</body>
+</html>
